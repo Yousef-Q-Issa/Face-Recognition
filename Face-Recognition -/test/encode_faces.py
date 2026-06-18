@@ -7,7 +7,7 @@ This version uses OpenCV instead of face_recognition to avoid dlib compilation i
 Usage:
     python encode_faces.py
 """
-
+import face_recognition
 import os
 import cv2
 from face_utils import (
@@ -55,42 +55,24 @@ def encode_faces():
             print(f"  [{processed}/{total_images}] {os.path.basename(image_path)}", end=" ... ")
             
             # Load image
-            image = load_image(image_path)
-            if image is None:
-                print("FAILED (could not load)")
-                skipped += 1
-                continue
-            
-            # Detect faces in image
             try:
-                face_rects = detect_faces_opencv(image, conf_threshold=0.5)
-            except Exception as e:
-                print(f"FAILED (detection error: {e})")
-                skipped += 1
-                continue
-            
-            if len(face_rects) == 0:
-                print("FAILED (no faces detected)")
-                skipped += 1
-                continue
-            elif len(face_rects) > 1:
-                print(f"WARNING (found {len(face_rects)} faces, using first)")
-            
-            # Extract features from first face in image
-            try:
-                features = extract_face_features(image, face_rects[0])
-                if features is None:
-                    print("FAILED (could not extract features)")
+                image = face_recognition.load_image_file(image_path)
+
+                encodings = face_recognition.face_encodings(image)
+
+                if len(encodings) == 0:
+                    print("FAILED (no face found)")
                     skipped += 1
                     continue
-                
-                known_encodings.append(features)
+
+                known_encodings.append(encodings[0])
                 known_names.append(person_name)
+
                 person_encoding_count += 1
                 print("OK")
-            
+
             except Exception as e:
-                print(f"FAILED (feature extraction error: {e})")
+                print(f"FAILED ({e})")
                 skipped += 1
                 continue
         
